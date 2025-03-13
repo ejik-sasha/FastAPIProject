@@ -18,13 +18,13 @@ router = APIRouter(
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-# Get Posts Endpoint
+# Get Posts
 @router.get("/", response_model=List[schemas.Post])
 def read_posts(db: db_dependency, skip: int = 0, limit: int = 10):
     posts = db.query(models.Post).order_by(models.Post.timestamp.desc()).offset(skip).limit(limit).all()
     return posts
 
-# Create New Post Endpoint
+# Create New Post
 @router.post("/", response_model=schemas.Post)
 def create_new_post(
     post: schemas.PostCreate,
@@ -37,7 +37,7 @@ def create_new_post(
     db.refresh(db_post)
     return db_post
 
-# Delete Existing Post Endpoint
+# Delete Existing Post
 @router.delete("/{post_id}", status_code=204)
 def delete_existing_post(
     post_id: int,
@@ -51,7 +51,7 @@ def delete_existing_post(
     db.commit()
     return
 
-# Update Post Endpoint
+# Update Post
 @router.put("/{post_id}", response_model=schemas.Post)
 def update_post(
     post_id: int,
@@ -75,7 +75,7 @@ def update_post(
     db.commit()
     return post
 
-# Like Post Endpoint
+# Like Post
 @router.post("/{post_id}/like", status_code=204)
 def like_post(
     post_id: int,
@@ -93,7 +93,7 @@ def like_post(
     db.commit()
     return
 
-# Unlike Post Endpoint
+# Unlike Post
 @router.post("/{post_id}/unlike", status_code=204)
 def unlike_post(
     post_id: int,
@@ -107,7 +107,7 @@ def unlike_post(
     db.commit()
     return
 
-# Retweet Post Endpoint
+# Retweet Post
 @router.post("/{post_id}/retweet", status_code=204)
 def retweet_post(
     post_id: int,
@@ -151,7 +151,6 @@ def read_posts_with_counts(db: db_dependency):
         .subquery()
     )
 
-    # Create a subquery to count retweets for each post
     retweets_subq = (
         db.query(
             models.Retweet.post_id,
@@ -161,31 +160,29 @@ def read_posts_with_counts(db: db_dependency):
         .subquery()
     )
 
-    # Fetch posts along with their like/retweet counts and owner username
     posts = (
         db.query(
-            models.Post,  # Select the post data
-            models.User.username.label('owner_username'),  # Include owner's username
-            func.coalesce(likes_subq.c.likes_count, 0).label('likes_count'),  # Join with likes count
-            func.coalesce(retweets_subq.c.retweets_count, 0).label('retweets_count')  # Join with retweets count
+            models.Post,
+            models.User.username.label('owner_username'),
+            func.coalesce(likes_subq.c.likes_count, 0).label('likes_count'),
+            func.coalesce(retweets_subq.c.retweets_count, 0).label('retweets_count')
         )
-        .join(models.User, models.Post.owner_id == models.User.id)  # Join Post with User table to get username
-        .outerjoin(likes_subq, models.Post.id == likes_subq.c.post_id)  # Join posts with likes count subquery
-        .outerjoin(retweets_subq, models.Post.id == retweets_subq.c.post_id)  # Join posts with retweets count subquery
-        .order_by(models.Post.timestamp.desc())  # Order by post creation timestamp
-        .all()  # Execute the query
+        .join(models.User, models.Post.owner_id == models.User.id)
+        .outerjoin(likes_subq, models.Post.id == likes_subq.c.post_id)
+        .outerjoin(retweets_subq, models.Post.id == retweets_subq.c.post_id)
+        .order_by(models.Post.timestamp.desc())
+        .all()
     )
 
-    # Construct the response with posts, counts, and owner username
+
     response_posts = []
     for post, owner_username, likes_count, retweets_count in posts:
-        # Append each post along with its counts and owner's username to the response list
         response_posts.append(schemas.PostWithCounts(
             id=post.id,
             content=post.content,
             timestamp=post.timestamp,
             owner_id=post.owner_id,
-            owner_username=owner_username,  # Include owner's username in the response
+            owner_username=owner_username,
             likes_count=likes_count,
             retweets_count=retweets_count
         ))

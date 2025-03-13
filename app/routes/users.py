@@ -31,6 +31,7 @@ def create_user(user: schemas.UserCreate, db: db_dependency):
         email=user.email,
         hashed_password=hashed_password,
         role=user.role
+
     )
     db.add(new_user)
     db.commit()
@@ -120,3 +121,19 @@ def update_user_role(
 def check_admin(current_user: models.User):
     if current_user.role != models.UserRole.ADMIN:
         raise_forbidden_exception("You do not have permission to perform this action")
+
+
+@router.get("/debug/user/{username}")
+def debug_user(username: str, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if not user:
+        raise_not_found_exception("User not found")
+
+    return {
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "hashed_password": user.hashed_password  # Только для отладки
+    }
+
+

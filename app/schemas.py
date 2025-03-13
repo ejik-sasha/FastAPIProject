@@ -25,6 +25,12 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
+class UserResponse(BaseModel):
+    user: User
+    access_token: str
+    token_type: str
+
+
 #Token
 
 class Token(BaseModel):
