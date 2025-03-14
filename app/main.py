@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from pydantic_settings import BaseSettings
 
-from .database import engine
-from .models import Base
+
 from app.routes import users, auth, posts
+from app.models import Base
+from app.database import engine
 
 class Settings(BaseSettings):
     secret_key: str

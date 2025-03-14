@@ -2,16 +2,27 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build: ./app
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - ./app:/app
     environment:
       - DATABASE_URL=sqlite:///./meowblog.db
       - SECRET_KEY=your-secret-key
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    depends_on:
+      - rabbitmq
+
+  notification_service:
+    build: ./notification_service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./notification_service:/app
+    environment:
+      - RABBITMQ_HOST=rabbitmq
     depends_on:
       - rabbitmq
 

@@ -10,6 +10,7 @@ from app.exceptions import (
 
 from .. import models, schemas, auth
 from ..database import get_db
+from app.utils.notifications import send_notification
 
 router = APIRouter(
     prefix="/posts",
@@ -35,6 +36,9 @@ def create_new_post(
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
+
+    send_notification("new_post", {"post_id": db_post.id, "user_id": current_user.id})
+
     return db_post
 
 # Delete Existing Post
@@ -91,6 +95,7 @@ def like_post(
     new_like = models.Like(user_id=current_user.id, post_id=post_id)
     db.add(new_like)
     db.commit()
+    send_notification("like", {"post_id": post_id, "user_id": current_user.id})
     return
 
 # Unlike Post
@@ -123,6 +128,7 @@ def retweet_post(
     new_retweet = models.Retweet(user_id=current_user.id, post_id=post_id)
     db.add(new_retweet)
     db.commit()
+    send_notification("retweet", {"post_id": post_id, "user_id": current_user.id})
     return
 
 # Unretweet
